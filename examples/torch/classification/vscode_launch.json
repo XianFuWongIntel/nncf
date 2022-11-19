@@ -15,7 +15,7 @@
             "args": [
                 "-m", "test",
                 // "export",
-                "--gpu-id", "3",
+                // "--gpu-id", "3",
                 "-j", "16",
                 "-b", "64",
                 "--log-dir", 
@@ -29,6 +29,31 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "[NNCF] eval ImageNet FP32 (HPU)",
+            "type": "python",
+            "request": "launch",
+
+            "cwd": "${workspaceFolder}/nncf/examples/torch/classification",
+            "program": "main.py",
+            "args": [
+                "-m", 
+                "test", 
+                "--hpu",
+                "-j", "16",
+                "-b", "32",
+                "--log-dir", 
+                    "/tmp/vscode-dev/nncf-objreg/",
+                "--config", 
+                    "configs/quantization/resnet50_imagenet.json",
+                "--data", 
+                    "/home/ubuntu/data/imgnet-train1k-val1k-dev",
+                    // "/data/dataset/imagenet/ilsvrc2012/torchvision"
+                // "/data/dataset/imagenet/ilsvrc2012/imgnet-train1k-val1k-dev",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
             "name": "[NNCF] eval ImageNet FP32",
             "type": "python",
             "request": "launch",
@@ -39,15 +64,17 @@
                 "-m", 
                 "test", 
                 // "export",
-                "--gpu-id", "3",
+                // "--gpu-id", "3",
+                "--cpu-only",
                 "-j", "16",
-                "-b", "256",
+                "-b", "32",
                 "--log-dir", 
                     "/tmp/vscode-dev/nncf-objreg/",
                 "--config", 
                     "configs/quantization/resnet50_imagenet.json",
                 "--data", 
-                    "/data/dataset/imagenet/ilsvrc2012/torchvision"
+                    "/home/ubuntu/data/imgnet-train1k-val1k-dev",
+                    // "/data/dataset/imagenet/ilsvrc2012/torchvision"
                 // "/data/dataset/imagenet/ilsvrc2012/imgnet-train1k-val1k-dev",
             ],
             "console": "integratedTerminal",

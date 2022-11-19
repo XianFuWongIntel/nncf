@@ -32,8 +32,13 @@ class ExecutionMode:
     # Single node with 1 process utilising all local GPUs
     GPU_DATAPARALLEL = "gpu_dataparallel"
 
+    # TODO: how do we differentiate dataparallel or multiprocessing
+    HPU = "hpu"
 
 def get_execution_mode(config):
+    # TODO: review, place this at top for priority
+    if config.hpu:
+        return ExecutionMode.HPU
     if config.cpu_only:
         return ExecutionMode.CPU_ONLY
     if config.gpu_id is not None:
@@ -50,7 +55,8 @@ def get_device(config):
         return "cpu"
     if config.current_gpu is not None:
         return "cuda:{}".format(config.current_gpu)
-
+    if config.execution_mode == ExecutionMode.HPU:
+        return "hpu"
     return "cuda"
 
 
@@ -94,6 +100,10 @@ def prepare_model_for_execution(model, config):
 
 
 def start_worker(main_worker, config: SampleConfig):
+    if config.execution_mode == ExecutionMode.HPU:
+        main_worker(current_gpu=None, config=config)
+        return
+
     if config.execution_mode == ExecutionMode.CPU_ONLY:
         main_worker(current_gpu=None, config=config)
         return

@@ -82,6 +82,8 @@ from nncf.torch.utils import is_main_process
 from nncf.torch.utils import safe_thread_call
 from collections import OrderedDict
 
+import habana_frameworks.torch.core as htcore
+
 model_names = sorted(name for name, val in models.__dict__.items()
                      if name.islower() and not name.startswith("__")
                      and callable(val))
@@ -113,6 +115,10 @@ def get_argument_parser():
 
 def main(argv):
     parser = get_argument_parser()
+    # TODO: review needed
+    parser.add_argument('--hpu', action='store_true',
+                            help='override all execution with hpu')
+
     args = parse_args(parser, argv)
     config = create_sample_config(args, parser)
 

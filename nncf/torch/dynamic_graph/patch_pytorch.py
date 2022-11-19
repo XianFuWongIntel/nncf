@@ -279,34 +279,36 @@ def patch_extension_build_function():
     The function patches PyTorch and fix a bug inside CUDA extensions building;
     The bug must be fixed with a new PyTorch 1.8.0
     """
-    try:
-        torch_version_numbers = torch.__version__.split('+', maxsplit=1)[0]
-        # get major, minor and patch number, ignore other version info like .dev
-        split_torch_version = list(map(int, torch_version_numbers.split('.')[:3]))
+    # TODO: temporary disable following check
+    # try:
+    #     torch_version_numbers = torch.__version__.split('+', maxsplit=1)[0]
+    #     # get major, minor and patch number, ignore other version info like .dev
+    #     split_torch_version = list(map(int, torch_version_numbers.split('.')[:3]))
 
-    except ValueError as e:
-        logger.warning('Skip applying a patch to building extension with a reason: '
-                       'Cannot parse a PyTorch version with the error {}'.format(e))
-        return
+    # except ValueError as e:
+    #     logger.warning('Skip applying a patch to building extension with a reason: '
+    #                    'Cannot parse a PyTorch version with the error {}'.format(e))
+    #     return
 
-    if split_torch_version < [1, 8, 0]:
-        if torch.__version__ not in ('1.5.1', '1.7.0', '1.7.1'):
-            logger.warning('Skip applying a patch to building extension with a reason: '
-                           'PyTorch version is not supported for this')
-            return
+    # if split_torch_version < [1, 8, 0]:
+    #     if torch.__version__ not in ('1.5.1', '1.7.0', '1.7.1'):
+    #         logger.warning('Skip applying a patch to building extension with a reason: '
+    #                        'PyTorch version is not supported for this')
+    #         return
 
-        def sort_arch_flags(func):
-            def wrapped(*args, **kwargs):
-                flags = func(*args, **kwargs)
-                return sorted(flags)
+    #     def sort_arch_flags(func):
+    #         def wrapped(*args, **kwargs):
+    #             flags = func(*args, **kwargs)
+    #             return sorted(flags)
 
-            return wrapped
+    #         return wrapped
 
-        # pylint:disable=protected-access
-        torch.utils.cpp_extension._get_cuda_arch_flags = \
-            sort_arch_flags(torch.utils.cpp_extension._get_cuda_arch_flags)
+    #     # pylint:disable=protected-access
+    #     torch.utils.cpp_extension._get_cuda_arch_flags = \
+    #         sort_arch_flags(torch.utils.cpp_extension._get_cuda_arch_flags)
 
-    else:
+    # else:
+    if True:
         import re
         import sys
         from pathlib import Path
