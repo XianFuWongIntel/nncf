@@ -22,7 +22,6 @@ from nncf.torch.quantization.extensions import QuantizedFunctionsCPU, QuantizedF
 from nncf.torch.dynamic_graph.patch_pytorch import register_operator
 from nncf.torch.functions import STRound, clamp
 
-IS_HPU = False
 
 # pylint:disable=abstract-method
 class QuantizeSymmetric(torch.autograd.Function):
@@ -55,7 +54,7 @@ class QuantizeSymmetric(torch.autograd.Function):
                     dump_kernel_io_dict['Forward']['i']['levels']= levels
 
             output = QuantizedFunctionsCUDA.Quantize_forward(input_, input_low, input_range, levels)
-        elif IS_HPU:
+        elif input_.device.type == 'hpu':
             if dump_kernel_io_dict is not None:
                 if len(dump_kernel_io_dict) == 0:
                     # we only dump for a single batch, the first batch to save memory
@@ -66,7 +65,7 @@ class QuantizeSymmetric(torch.autograd.Function):
                     dump_kernel_io_dict['Forward']['i']['input_low']= input_low.detach().clone().cpu().numpy()
                     dump_kernel_io_dict['Forward']['i']['input_range']= input_range.detach().clone().cpu().numpy()
                     dump_kernel_io_dict['Forward']['i']['levels']= levels
-            output = QuantizedFunctionsHPU.Quantize_forward(input_, input_low, input_range, levels)
+            output = QuantizedFunctionsHPU.fakequantize(input_, input_low, input_range, levels)
         else:
             if dump_kernel_io_dict is not None:
                 if len(dump_kernel_io_dict) == 0:
@@ -107,7 +106,7 @@ class QuantizeSymmetric(torch.autograd.Function):
             grad_input, _, grad_scale = QuantizedFunctionsCUDA.Quantize_backward(
                 grad_output, input_, input_low, input_range, levels, level_low, level_high
             )
-        elif IS_HPU:
+        elif grad_output.device.type == 'hpu':
             # TODO: to be complete
             grad_input, _, grad_scale = QuantizedFunctionsHPU.Quantize_backward(
                 grad_output, input_, input_low, input_range, levels, level_low, level_high, False
@@ -147,7 +146,7 @@ class QuantizeAsymmetric(torch.autograd.Function):
                     dump_kernel_io_dict['Forward']['i']['levels']= levels
 
             output = QuantizedFunctionsCUDA.Quantize_forward(input_, input_low, input_range, levels)
-        elif IS_HPU:
+        elif input_.device.type == 'hpu':
             if dump_kernel_io_dict is not None:
                 if len(dump_kernel_io_dict) == 0:
                     # we only dump for a single batch, the first batch to save memory
@@ -199,7 +198,7 @@ class QuantizeAsymmetric(torch.autograd.Function):
             grad_input, grad_input_low, grad_input_range = QuantizedFunctionsCUDA.Quantize_backward(
                 grad_output, input_, input_low, input_range, levels, level_low, level_high
             )
-        elif IS_HPU:
+        elif grad_output.device.type == 'hpu':
             # TODO: to be complete
             grad_input, grad_input_low, grad_input_range = QuantizedFunctionsHPU.Quantize_backward(
                 grad_output, input_, input_low, input_range, levels, level_low, level_high, True

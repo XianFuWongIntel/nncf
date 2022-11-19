@@ -5,6 +5,35 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "[NNCF] PTQ (HPU)",
+            "type": "python",
+            "request": "launch",
+            "env": {
+                "GC_KERNEL_PATH": "/home/ubuntu/Habana_Custom_Kernel/build/src/libcustom_tpc_perf_lib.so:/usr/lib/habanalabs/libtpc_kernels.so",
+            },
+            "cwd": "${workspaceFolder}/nncf/examples/torch/classification",
+            "program": "main.py",
+            "args": [
+                "-m", "test",
+                // "export",
+                // "--gpu-id", "3",
+                "--hpu",
+                "-j", "16",
+                "-b", "256",
+                "--log-dir", 
+                    "/tmp/vscode-dev/nncf-ptq/",                   
+                "--config", 
+                    "qcfg-sweep/rn18-8bit-wq-sym-aq-sym-per-tensor.json",
+                    // "configs/quantization/resnet18_imagenet_int8.json", // ballpark outcomes * Acc@1 69.700 Acc@5 89.026
+                "--data", 
+                    "/home/ubuntu/data/imgnet-val50k/",
+                    // "/home/ubuntu/data/imgnet-train1k-val1k-dev",
+                    // "/data/dataset/imagenet/ilsvrc2012/torchvision/"
+                    // "/data1/dataset/imagenet/ilsvrc2012/imgnet-train1k-val1k-dev",
+            ],
+            "console": "integratedTerminal"
+        },
+        {
             "name": "[NNCF] PTQ",
             "type": "python",
             "request": "launch",

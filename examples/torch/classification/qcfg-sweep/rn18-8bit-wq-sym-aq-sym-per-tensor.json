@@ -18,7 +18,8 @@
         "algorithm": "quantization",
         "initializer": {
             "range": {
-                "num_init_samples": 850
+                "num_init_samples": 850,
+                // "num_init_samples": 850
             }
         },
         "weights": {

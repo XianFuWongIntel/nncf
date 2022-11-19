@@ -14,6 +14,7 @@
 import os.path
 import torch
 from torch.utils.cpp_extension import load
+import habana_frameworks.torch.hpu as hpu
 
 from nncf.torch.extensions import CudaNotAvailableStub, ExtensionsType, ExtensionLoader, EXTENSIONS
 from nncf.definitions import NNCF_PACKAGE_ROOT_DIR
@@ -35,10 +36,7 @@ CUDA_EXT_SRC_LIST = [
 ]
 
 #TODO: revise path
-HPU_EXT_SRC_LIST = [
-    os.path.join(BASE_EXT_DIR, "hpu/*"),
-    os.path.join(BASE_EXT_DIR, "hpu/*")
-]
+HPU_CUSTOM_OP_LIB_PATH = "/home/ubuntu/Model-References/PyTorch/examples/custom_op/fake_quantize/build/lib.linux-x86_64-3.8/hpu_fake_quantize.cpython-38-x86_64-linux-gnu.so"
 
 @EXTENSIONS.register()
 class QuantizedFunctionsCPULoader(ExtensionLoader):
@@ -96,11 +94,8 @@ class QuantizedFunctionsHPULoader(ExtensionLoader):
         # * Torch function and module wrapping 
         #   reuse nncf/torch/quantization/quantize_functions.py
         #   otherwise: https://github.com/HabanaAI/Model-References/blob/master/PyTorch/examples/custom_op/custom_relu/custom_relu.py
-        return load(cls.name(),
-                    CUDA_EXT_SRC_LIST,
-                    extra_include_paths=EXT_INCLUDE_DIRS,
-                    build_directory=cls.get_build_dir(),
-                    verbose=False)
+        torch.ops.load_library(HPU_CUSTOM_OP_LIB_PATH)
+        return torch.ops.custom_op
 
     @classmethod
     def name(cls) -> str:
@@ -114,8 +109,9 @@ if torch.cuda.is_available():
 else:
     QuantizedFunctionsCUDA = CudaNotAvailableStub
 
-if IS_HPU:
+if hpu.is_available():
     QuantizedFunctionsHPU = QuantizedFunctionsHPULoader.load()
 else:
+    # TODO: how do we handle this?
     # Just to avoid error for existing build
     QuantizedFunctionsHPU = None
