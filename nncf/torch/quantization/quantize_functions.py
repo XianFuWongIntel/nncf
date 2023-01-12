@@ -65,7 +65,7 @@ class QuantizeSymmetric(torch.autograd.Function):
                     dump_kernel_io_dict['Forward']['i']['input_low']= input_low.detach().clone().cpu().numpy()
                     dump_kernel_io_dict['Forward']['i']['input_range']= input_range.detach().clone().cpu().numpy()
                     dump_kernel_io_dict['Forward']['i']['levels']= levels
-            output = QuantizedFunctionsHPU.fakequantize(input_, input_low, input_range, levels)
+            output = QuantizedFunctionsHPU.fakequantize_fwd(input_, input_low, input_range, levels)
         else:
             if dump_kernel_io_dict is not None:
                 if len(dump_kernel_io_dict) == 0:
@@ -108,15 +108,15 @@ class QuantizeSymmetric(torch.autograd.Function):
             )
         elif grad_output.device.type == 'hpu':
             # TODO: to be complete
-            grad_input, _, grad_scale = QuantizedFunctionsHPU.Quantize_backward(
-                grad_output, input_, input_low, input_range, levels, level_low, level_high, False
+            grad_input, _, grad_scale = QuantizedFunctionsHPU.fakequantize_bwd(
+                grad_output, input_, input_low, input_range, levels, level_low, level_high
             )
         else:
             grad_input, _, grad_scale = QuantizedFunctionsCPU.Quantize_backward(
                 grad_output, input_, input_low, input_range, levels, level_low, level_high, False
             )
 
-        return grad_input, grad_scale, None, None, None
+        return grad_input, grad_scale, None, None, None, None
 
 
 # pylint:disable=abstract-method
@@ -157,7 +157,7 @@ class QuantizeAsymmetric(torch.autograd.Function):
                     dump_kernel_io_dict['Forward']['i']['input_low']= input_low.detach().clone().cpu().numpy()
                     dump_kernel_io_dict['Forward']['i']['input_range']= input_range.detach().clone().cpu().numpy()
                     dump_kernel_io_dict['Forward']['i']['levels']= levels
-            output = QuantizedFunctionsHPU.Quantize_forward(input_, input_low, input_range, levels)
+            output = QuantizedFunctionsHPU.fakequantize_fwd(input_, input_low, input_range, levels)
         else:
             if dump_kernel_io_dict is not None:
                 if len(dump_kernel_io_dict) == 0:
@@ -200,15 +200,15 @@ class QuantizeAsymmetric(torch.autograd.Function):
             )
         elif grad_output.device.type == 'hpu':
             # TODO: to be complete
-            grad_input, grad_input_low, grad_input_range = QuantizedFunctionsHPU.Quantize_backward(
-                grad_output, input_, input_low, input_range, levels, level_low, level_high, True
+            grad_input, grad_input_low, grad_input_range = QuantizedFunctionsHPU.fakequantize_bwd(
+                grad_output, input_, input_low, input_range, levels, level_low, level_high
             )
         else:
             grad_input, grad_input_low, grad_input_range = QuantizedFunctionsCPU.Quantize_backward(
                 grad_output, input_, input_low, input_range, levels, level_low, level_high, True
             )
 
-        return grad_input, grad_input_low, grad_input_range, None, None, None
+        return grad_input, grad_input_low, grad_input_range, None, None, None, None
 
 
 def _quantize_autograd_to_range(input_, input_low, input_high, levels):
