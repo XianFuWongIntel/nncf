@@ -42,13 +42,20 @@ HIGH_BATCH_INPUT_SIZE = [128, 96, 64, 64]
 TEST_PLACES = ['weights', 'activations']
 TEST_GRANULARITY = ['per_tensor', 'per_channel']
 TEST_SYMMETRIC = [True, False]
-TEST_DEVICES = [torch.device('cuda'), torch.device('cpu')]
+# TEST_DEVICES = [torch.device('cuda'), torch.device('cpu')]
+TEST_DEVICES = [torch.device('cpu')]
+# TEST_BATCHES = [{'mode': "low batch", 'input_size': LOW_BATCH_INPUT_SIZE,
+#                  'runs': {torch.device('cuda'): GPU_RUNS_LOW_BATCH, torch.device('cpu'): CPU_RUNS}},
+#                 {'mode': "high batch", 'input_size': HIGH_BATCH_INPUT_SIZE,
+#                  'runs': {torch.device('cuda'): GPU_RUNS_HIGH_BATCH, torch.device('cpu'): CPU_RUNS}}]
 TEST_BATCHES = [{'mode': "low batch", 'input_size': LOW_BATCH_INPUT_SIZE,
-                 'runs': {torch.device('cuda'): GPU_RUNS_LOW_BATCH, torch.device('cpu'): CPU_RUNS}},
+                 'runs': {torch.device('cpu'): CPU_RUNS}},
                 {'mode': "high batch", 'input_size': HIGH_BATCH_INPUT_SIZE,
-                 'runs': {torch.device('cuda'): GPU_RUNS_HIGH_BATCH, torch.device('cpu'): CPU_RUNS}}]
-TEST_DTYPES = [torch.float, torch.half]
-TEST_DISTR_MODE = ['SYNK', 'DATAPARALLEL', 'DATADISTRIBUTED']
+                 'runs': {torch.device('cpu'): CPU_RUNS}}]
+TEST_DTYPES = [torch.float]
+# TEST_DTYPES = [torch.float, torch.half]
+TEST_DISTR_MODE = ['SYNK']
+# TEST_DISTR_MODE = ['SYNK', 'DATAPARALLEL', 'DATADISTRIBUTED']
 TEST_NARROW_RANGE = [False, True]
 TEST_TIMING_MODE = ['KERNEL', 'WALL']
 TEST_REFERENCE = [True, False]

@@ -21,13 +21,13 @@ def run_wall(layer, input_size_, device, runs, is_print=True, dtype=torch.float,
     # Force CUDA initialization & warm up
     warmup(layer, input_, 100)
 
-    torch.cuda.synchronize()
+    # torch.cuda.synchronize()
     start = time.time()
     for _ in range(runs):
         layer.zero_grad()
         new_i = layer(input_)
         new_i[0].sum().backward()
-    torch.cuda.synchronize()
+    # torch.cuda.synchronize()
     elapsed = time.time() - start
 
     ctime, scale = list(TIME_SCALES.items())[0]
@@ -54,19 +54,19 @@ def run_profile(layer, input_size_, device, runs, forward_only=False, dtype=torc
     for _ in range(runs):
         layer.zero_grad()
 
-        torch.cuda.synchronize()
+        # torch.cuda.synchronize()
         start = time.time()
         new_i = layer(input_)
-        torch.cuda.synchronize()
+        # torch.cuda.synchronize()
         elapsed = time.time() - start
         forward_min = min(forward_min, elapsed)
         forward_time += elapsed
 
         if not forward_only:
-            torch.cuda.synchronize()
+            # torch.cuda.synchronize()
             start = time.time()
             new_i[0].sum().backward()
-            torch.cuda.synchronize()
+            # torch.cuda.synchronize()
             elapsed = time.time() - start
             backward_min = min(backward_min, elapsed)
             backward_time += elapsed
