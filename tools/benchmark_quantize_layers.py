@@ -29,6 +29,7 @@ from nncf.torch.utils import sum_like
 from nncf.torch.quantization.layers import get_per_channel_scale_shape
 
 from tools.benchmark import run_profile, run_wall, run_worker
+import habana_frameworks.torch.core as htcore
 
 TIME_SCALES = {'ms': 1000}
 NBITS = 8
@@ -43,15 +44,15 @@ TEST_PLACES = ['weights', 'activations']
 TEST_GRANULARITY = ['per_tensor', 'per_channel']
 TEST_SYMMETRIC = [True, False]
 # TEST_DEVICES = [torch.device('cuda'), torch.device('cpu')]
-TEST_DEVICES = [torch.device('cpu')]
+TEST_DEVICES = [torch.device('cpu'), torch.device("hpu")]
 # TEST_BATCHES = [{'mode': "low batch", 'input_size': LOW_BATCH_INPUT_SIZE,
 #                  'runs': {torch.device('cuda'): GPU_RUNS_LOW_BATCH, torch.device('cpu'): CPU_RUNS}},
 #                 {'mode': "high batch", 'input_size': HIGH_BATCH_INPUT_SIZE,
 #                  'runs': {torch.device('cuda'): GPU_RUNS_HIGH_BATCH, torch.device('cpu'): CPU_RUNS}}]
 TEST_BATCHES = [{'mode': "low batch", 'input_size': LOW_BATCH_INPUT_SIZE,
-                 'runs': {torch.device('cpu'): CPU_RUNS}},
+                 'runs': {torch.device('cpu'): CPU_RUNS, torch.device('hpu'): CPU_RUNS}},
                 {'mode': "high batch", 'input_size': HIGH_BATCH_INPUT_SIZE,
-                 'runs': {torch.device('cpu'): CPU_RUNS}}]
+                 'runs': {torch.device('cpu'): CPU_RUNS, torch.device('hpu'): CPU_RUNS}}]
 TEST_DTYPES = [torch.float]
 # TEST_DTYPES = [torch.float, torch.half]
 TEST_DISTR_MODE = ['SYNK']
