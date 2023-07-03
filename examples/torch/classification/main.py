@@ -102,6 +102,8 @@ def get_argument_parser():
 
 def main(argv):
     parser = get_argument_parser()
+    parser.add_argument('--xpu', action='store_true',
+                            help='override all execution with XPU')
     args = parse_args(parser, argv)
     config = create_sample_config(args, parser)
 

@@ -139,6 +139,8 @@ def configure_device(current_gpu, config: SampleConfig):
     if config.execution_mode == ExecutionMode.SINGLE_GPU:
         torch.cuda.set_device(config.current_gpu)
 
+    if config.execution_mode == ExecutionMode.XPU:
+        torch.device(config.device)
 
 def configure_logging(sample_logger, config):
     config.tb = SummaryWriter(config.log_dir)

@@ -36,6 +36,7 @@ DEFAULT_EXTENSION_LOAD_TIMEOUT = 60
 class ExtensionsType(enum.Enum):
     CPU = 0
     CUDA = 1
+    XPU = 2
 
 
 def get_build_directory_for_extension(name: str) -> Path:

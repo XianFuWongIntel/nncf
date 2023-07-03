@@ -13,6 +13,7 @@ import os.path
 import subprocess
 
 import torch
+import intel_extension_for_pytorch
 
 from nncf import nncf_logger
 from nncf.definitions import NNCF_PACKAGE_ROOT_DIR
@@ -40,6 +41,10 @@ CUDA_EXT_SRC_LIST = [
     os.path.join(BASE_EXT_DIR, "cuda/functions_cuda_impl.cu"),
 ]
 
+XPU_EXT_SRC_LIST = [
+    os.path.join(BASE_EXT_DIR, "xpu/functions_xpu.cpp"),
+    os.path.join(BASE_EXT_DIR, "xpu/functions_xpu_impl.dp.cpp"),
+]
 
 @EXTENSIONS.register()
 class QuantizedFunctionsCPULoader(ExtensionLoader):
@@ -105,6 +110,25 @@ class QuantizedFunctionsCUDALoader(ExtensionLoader):
     def name(cls) -> str:
         return "quantized_functions_cuda"
 
+@EXTENSIONS.register()
+class QuantizedFunctionsXPULoader(ExtensionLoader):
+    @classmethod
+    def extension_type(cls):
+        return ExtensionsType.XPU
+
+    @classmethod
+    def load(cls):
+        return torch.xpu.cpp_extension.load(
+            cls.name(),
+            XPU_EXT_SRC_LIST,
+            extra_include_paths=EXT_INCLUDE_DIRS,
+            build_directory=cls.get_build_dir(),
+            verbose=False
+        )
+    @classmethod
+    def name(cls) -> str:
+        return "quantized_functions_xpu"
+
 
 QuantizedFunctionsCPU = ExtensionNamespace(QuantizedFunctionsCPULoader())
 
@@ -112,3 +136,6 @@ if torch.cuda.is_available():
     QuantizedFunctionsCUDA = ExtensionNamespace(QuantizedFunctionsCUDALoader())
 else:
     QuantizedFunctionsCUDA = CudaNotAvailableStub()
+
+if torch.xpu.is_available():
+    QuantizedFunctionsXPU = ExtensionNamespace(QuantizedFunctionsXPULoader())

@@ -20,6 +20,7 @@ from nncf.torch.utils import manual_seed
 class ExecutionMode:
     CPU_ONLY = "cpu_only"
     SINGLE_GPU = "single_gpu"
+    XPU = 'xpu'
 
     # Multiple elements, each with 1 process utilising all local GPUs
     DISTRIBUTED = "distributed"
@@ -40,6 +41,8 @@ def get_execution_mode(config):
         return ExecutionMode.MULTIPROCESSING_DISTRIBUTED
     if config.world_size > 1:
         return ExecutionMode.DISTRIBUTED
+    if config.xpu:
+        return ExecutionMode.XPU
     return ExecutionMode.GPU_DATAPARALLEL
 
 
@@ -48,7 +51,8 @@ def get_device(config):
         return "cpu"
     if config.current_gpu is not None:
         return "cuda:{}".format(config.current_gpu)
-
+    if config.execution_mode == ExecutionMode.XPU:
+        return "xpu"
     return "cuda"
 
 
@@ -93,6 +97,10 @@ def prepare_model_for_execution(model, config):
 
 def start_worker(main_worker, config: SampleConfig):
     if config.execution_mode == ExecutionMode.CPU_ONLY:
+        main_worker(current_gpu=None, config=config)
+        return
+
+    if config.execution_mode == ExecutionMode.XPU:
         main_worker(current_gpu=None, config=config)
         return
 
