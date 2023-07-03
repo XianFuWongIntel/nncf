@@ -1,0 +1,16 @@
+[
+    {
+        "command": "c++ -c -DTORCH_EXTENSION_NAME=quantized_functions_cuda -DTORCH_API_INCLUDE_EXTENSION_H -DPYBIND11_COMPILER_TYPE=\\\"_gcc\\\" -DPYBIND11_STDLIB=\\\"_libstdcpp\\\" -DPYBIND11_BUILD_ABI=\\\"_cxxabi1011\\\" -I/root/nncf/nncf/torch/extensions/include -isystem /usr/local/lib/python3.10/dist-packages/torch/include -isystem /usr/local/lib/python3.10/dist-packages/torch/include/torch/csrc/api/include -isystem /usr/local/lib/python3.10/dist-packages/torch/include/TH -isystem /usr/local/lib/python3.10/dist-packages/torch/include/THC -isystem /usr/local/cuda/include -isystem /usr/include/python3.10 -D_GLIBCXX_USE_CXX11_ABI=0 -fPIC -std=c++17 -o functions_cuda.o /root/nncf/nncf/torch/extensions/src/quantization/cuda/functions_cuda.cpp",
+        "directory": "/root/.cache/torch_extensions/py310_cu117/nncf/quantized_functions_cuda/2.0.1+cu117",
+        "file": "/root/nncf/nncf/torch/extensions/src/quantization/cuda/functions_cuda.cpp"
+    },
+    {
+        "command": "nvcc -c -DTORCH_EXTENSION_NAME=quantized_functions_cuda -DTORCH_API_INCLUDE_EXTENSION_H -DPYBIND11_COMPILER_TYPE=\\\"_gcc\\\" -DPYBIND11_STDLIB=\\\"_libstdcpp\\\" -DPYBIND11_BUILD_ABI=\\\"_cxxabi1011\\\" -I/root/nncf/nncf/torch/extensions/include -isystem /usr/local/lib/python3.10/dist-packages/torch/include -isystem /usr/local/lib/python3.10/dist-packages/torch/include/torch/csrc/api/include -isystem /usr/local/lib/python3.10/dist-packages/torch/include/TH -isystem /usr/local/lib/python3.10/dist-packages/torch/include/THC -isystem /usr/local/cuda/include -isystem /usr/include/python3.10 -D_GLIBCXX_USE_CXX11_ABI=0 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ -std=c++17 -o functions_cuda_impl.cuda.o -D__CUDACC__=1 /root/nncf/nncf/torch/extensions/src/quantization/cuda/functions_cuda_impl.cu",
+        "directory": "/root/.cache/torch_extensions/py310_cu117/nncf/quantized_functions_cuda/2.0.1+cu117",
+        "file": "/root/nncf/nncf/torch/extensions/src/quantization/cuda/functions_cuda_impl.cu"
+    },
+    {
+        "command": "ld -plugin /usr/lib/gcc/x86_64-linux-gnu/11/liblto_plugin.so -plugin-opt=/usr/lib/gcc/x86_64-linux-gnu/11/lto-wrapper -plugin-opt=-fresolution=/tmp/ccMtt73b.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s --build-id --eh-frame-hdr -melf_x86_64 --hash-style=gnu --as-needed -shared -o quantized_functions_cuda.so /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/11/crtbeginS.o functions_cuda.o functions_cuda_impl.cuda.o /usr/lib/gcc/x86_64-linux-gnu/11/crtendS.o /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/crtn.o",
+        "directory": "/root/.cache/torch_extensions/py310_cu117/nncf/quantized_functions_cuda/2.0.1+cu117"
+    }
+]
