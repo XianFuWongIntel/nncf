@@ -1,0 +1,16 @@
+
+# oneAPI installation
+wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/7deeaac4-f605-4bcf-a81b-ea7531577c61/l_BaseKit_p_2023.1.0.46401_offline.sh
+chmod +x l_BaseKit_p_2023.1.0.46401_offline.sh
+./l_BaseKit_p_2023.1.0.46401_offline.sh -a -s --eula accept
+
+# Init env
+conda create -n ipex-xpu python=3.9
+conda activate ipex-xpu
+
+# Start compiling
+# - torch
+# - torchvision
+# - torchaudio
+# - ipex
+bash compile_bundle.sh path/to/intel/oneapi/compiler/latest path/to/intel/oneapi/mkl/latest
