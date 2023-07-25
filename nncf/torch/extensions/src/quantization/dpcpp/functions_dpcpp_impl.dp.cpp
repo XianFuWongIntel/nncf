@@ -375,13 +375,16 @@ at::Tensor q_dpcpp_forward(
           info::device::max_work_group_size. Adjust the work-group size if
           needed.
           */
-          
+    sycl::buffer output_buf(output.data_ptr<scalar_t>(), sycl::range<1>(output.numel()));
+    sycl::buffer input_buf(input.data_ptr<scalar_t>(), sycl::range<1>(input.numel()));
+    sycl::buffer input_low_buf(input_low.data_ptr<scalar_t>(), sycl::range<1>(input_low.numel()));
+    sycl::buffer input_range_buf(input_range.data_ptr<scalar_t>(), sycl::range<1>(input_range.numel()));
+
     dpct::get_default_queue().submit([&](sycl::handler &cgh) {
-          auto output_data_ptr_scalar_t_ct0 = output.data_ptr<scalar_t>();
-          auto input_data_ptr_scalar_t_ct1 = input.data_ptr<scalar_t>();
-          auto input_low_data_ptr_scalar_t_ct2 = input_low.data_ptr<scalar_t>();
-          auto input_range_data_ptr_scalar_t_ct3 =
-              input_range.data_ptr<scalar_t>();
+          sycl::accessor output_acc(output_buf, cgh, sycl::write_only);
+          sycl::accessor input_acc(input_buf, cgh, sycl::read_only);
+          sycl::accessor input_low_acc(input_low_buf, cgh, sycl::read_only);
+          sycl::accessor input_range_acc(input_range_buf, cgh, sycl::read_only);
 
           cgh.parallel_for(
               sycl::nd_range<3>(
@@ -390,9 +393,9 @@ at::Tensor q_dpcpp_forward(
                   sycl::range<3>(1, 1, CUDA_MAX_NUM_THREADS_PER_BLOCK)),
               [=](sycl::nd_item<3> item_ct1) {
                 q_dpcpp_forward_kernel<scalar_t>(
-                    output_data_ptr_scalar_t_ct0, input_data_ptr_scalar_t_ct1,
-                    input_low_data_ptr_scalar_t_ct2,
-                    input_range_data_ptr_scalar_t_ct3, levels,
+                    output_acc.get_pointer(), input_acc.get_pointer(),
+                    input_low_acc.get_pointer(),
+                    input_range_acc.get_pointer(), levels,
                     quantized_elements_count, contiguous_elements_per_scale,
                     scale_count, item_ct1);
               });
@@ -439,7 +442,19 @@ std::vector<at::Tensor> q_single_scale_dpcpp_backward(at::Tensor grad_output,
       limit. To get the device limit, query info::device::max_work_group_size.
       Adjust the work-group size if needed.
       */
-    dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+      sycl::buffer grad_input_buf(grad_input.data_ptr<scalar_t>(), sycl::range<1>(grad_input.numel()));
+      sycl::buffer grad_input_low_buf(grad_input_low.data_ptr<scalar_t>(), sycl::range<1>(grad_input_low.numel()));
+      sycl::buffer grad_input_range_buf(grad_input_range.data_ptr<scalar_t>(), sycl::range<1>(grad_input_range.numel()));
+      sycl::buffer dev_tmp_range_buf(dev_tmp_range.data_ptr<scalar_accum_t>(), sycl::range<1>(dev_tmp_range.numel()));
+      sycl::buffer dev_tmp_low_buf(dev_tmp_low.data_ptr<scalar_accum_t>(), sycl::range<1>(dev_tmp_low.numel()));
+      sycl::buffer dev_last_block_counter_range_buf(dev_last_block_counter_range.data_ptr<int32_t>(), sycl::range<1>(dev_last_block_counter_range.numel()));
+      sycl::buffer dev_last_block_counter_low_buf(dev_last_block_counter_low.data_ptr<int32_t>(), sycl::range<1>(dev_last_block_counter_low.numel()));
+      sycl::buffer grad_output_buf(grad_output.data_ptr<scalar_t>(), sycl::range<1>(grad_output.numel()));
+      sycl::buffer input_buf(input.data_ptr<scalar_t>(), sycl::range<1>(input.numel()));
+      sycl::buffer input_low_buf(input_low.data_ptr<scalar_t>(), sycl::range<1>(input_low.numel()));
+      sycl::buffer input_range_buf(input_range.data_ptr<scalar_t>(), sycl::range<1>(input_range.numel()));
+
+      dpct::get_default_queue().submit([&](sycl::handler &cgh) {
           /*
           DPCT1101:14: 'CUDA_MAX_NUM_THREADS_PER_BLOCK' expression was replaced
           with a value. Modify the code to use the original expression, provided
@@ -454,27 +469,17 @@ std::vector<at::Tensor> q_single_scale_dpcpp_backward(at::Tensor grad_output,
           */
           sycl::local_accessor<scalar_accum_t, 1> sh_grad_low_acc_ct1(
               sycl::range<1>(1024 /*CUDA_MAX_NUM_THREADS_PER_BLOCK*/), cgh);
-
-          auto grad_input_data_ptr_scalar_t_ct0 =
-              grad_input.data_ptr<scalar_t>();
-          auto grad_input_low_data_ptr_scalar_t_ct1 =
-              grad_input_low.data_ptr<scalar_t>();
-          auto grad_input_range_data_ptr_scalar_t_ct2 =
-              grad_input_range.data_ptr<scalar_t>();
-          auto dev_tmp_range_data_ptr_scalar_accum_t_ct3 =
-              dev_tmp_range.data_ptr<scalar_accum_t>();
-          auto dev_tmp_low_data_ptr_scalar_accum_t_ct4 =
-              dev_tmp_low.data_ptr<scalar_accum_t>();
-          auto dev_last_block_counter_range_data_ptr_int32_t_ct5 =
-              dev_last_block_counter_range.data_ptr<int32_t>();
-          auto dev_last_block_counter_low_data_ptr_int32_t_ct6 =
-              dev_last_block_counter_low.data_ptr<int32_t>();
-          auto grad_output_data_ptr_scalar_t_ct7 =
-              grad_output.data_ptr<scalar_t>();
-          auto input_data_ptr_scalar_t_ct8 = input.data_ptr<scalar_t>();
-          auto input_low_data_ptr_scalar_t_ct9 = input_low.data_ptr<scalar_t>();
-          auto input_range_data_ptr_scalar_t_ct10 =
-              input_range.data_ptr<scalar_t>();
+          sycl::accessor grad_input_acc(grad_input_buf, cgh, sycl::write_only);
+          sycl::accessor grad_input_low_acc(grad_input_low_buf, cgh, sycl::write_only);
+          sycl::accessor grad_input_range_acc(grad_input_range_buf, cgh, sycl::write_only);
+          sycl::accessor dev_tmp_range_acc(dev_tmp_range_buf, cgh, sycl::write_only);
+          sycl::accessor dev_tmp_low_acc(dev_tmp_low_buf, cgh, sycl::write_only);
+          sycl::accessor dev_last_block_counter_range_acc(dev_last_block_counter_range_buf, cgh, sycl::write_only);
+          sycl::accessor dev_last_block_counter_low_acc(dev_last_block_counter_low_buf, cgh, sycl::write_only);
+          sycl::accessor grad_output_acc(grad_output_buf, cgh, sycl::read_only);
+          sycl::accessor input_acc(input_buf, cgh, sycl::read_only);
+          sycl::accessor input_low_acc(input_low_buf, cgh, sycl::read_only);
+          sycl::accessor input_range_acc(input_range_buf, cgh, sycl::read_only);
 
           cgh.parallel_for(
               sycl::nd_range<3>(
@@ -483,17 +488,17 @@ std::vector<at::Tensor> q_single_scale_dpcpp_backward(at::Tensor grad_output,
                   sycl::range<3>(1, 1, CUDA_MAX_NUM_THREADS_PER_BLOCK)),
               [=](sycl::nd_item<3> item_ct1) {
                 q_single_scale_dpcpp_backward_kernel<scalar_t, scalar_accum_t>(
-                    grad_input_data_ptr_scalar_t_ct0,
-                    grad_input_low_data_ptr_scalar_t_ct1,
-                    grad_input_range_data_ptr_scalar_t_ct2,
-                    dev_tmp_range_data_ptr_scalar_accum_t_ct3,
-                    dev_tmp_low_data_ptr_scalar_accum_t_ct4,
-                    dev_last_block_counter_range_data_ptr_int32_t_ct5,
-                    dev_last_block_counter_low_data_ptr_int32_t_ct6,
-                    grad_output_data_ptr_scalar_t_ct7,
-                    input_data_ptr_scalar_t_ct8,
-                    input_low_data_ptr_scalar_t_ct9,
-                    input_range_data_ptr_scalar_t_ct10, levels, level_low,
+                    grad_input_acc.get_pointer(),
+                    grad_input_low_acc.get_pointer(),
+                    grad_input_range_acc.get_pointer(),
+                    dev_tmp_range_acc.get_pointer(),
+                    dev_tmp_low_acc.get_pointer(),
+                    dev_last_block_counter_range_acc.get_pointer(),
+                    dev_last_block_counter_low_acc.get_pointer(),
+                    grad_output_acc.get_pointer(),
+                    input_acc.get_pointer(),
+                    input_low_acc.get_pointer(),
+                    input_range_acc.get_pointer(), levels, level_low,
                     level_high, size, item_ct1,
                     sh_grad_range_acc_ct1.get_pointer(),
                     sh_grad_low_acc_ct1.get_pointer());
@@ -548,6 +553,18 @@ std::vector<at::Tensor> q_scale_per_weight_channel_dpcpp_backward(at::Tensor gra
               info::device::max_work_group_size. Adjust the work-group size if
               needed.
               */
+    sycl::buffer grad_input_buf(grad_input.data_ptr<scalar_t>(), sycl::range<1>(grad_input.numel()));
+    sycl::buffer grad_input_low_buf(grad_input_low.data_ptr<scalar_t>(), sycl::range<1>(grad_input_low.numel()));
+    sycl::buffer grad_input_range_buf(grad_input_range.data_ptr<scalar_t>(), sycl::range<1>(grad_input_range.numel()));
+    sycl::buffer dev_tmp_range_buf(dev_tmp_range.data_ptr<scalar_accum_t>(), sycl::range<1>(dev_tmp_range.numel()));
+    sycl::buffer dev_tmp_low_buf(dev_tmp_low.data_ptr<scalar_accum_t>(), sycl::range<1>(dev_tmp_low.numel()));
+    sycl::buffer dev_last_block_counter_range_buf(dev_last_block_counter_range.data_ptr<int32_t>(), sycl::range<1>(dev_last_block_counter_range.numel()));
+    sycl::buffer dev_last_block_counter_low_buf(dev_last_block_counter_low.data_ptr<int32_t>(), sycl::range<1>(dev_last_block_counter_low.numel()));
+    sycl::buffer grad_output_buf(grad_output.data_ptr<scalar_t>(), sycl::range<1>(grad_output.numel()));
+    sycl::buffer input_buf(input.data_ptr<scalar_t>(), sycl::range<1>(input.numel()));
+    sycl::buffer input_low_buf(input_low.data_ptr<scalar_t>(), sycl::range<1>(input_low.numel()));
+    sycl::buffer input_range_buf(input_range.data_ptr<scalar_t>(), sycl::range<1>(input_range.numel()));
+
     dpct::get_default_queue().submit([&](sycl::handler &cgh) {
           /*
           DPCT1101:16: 'CUDA_MAX_NUM_THREADS_PER_BLOCK' expression was replaced
@@ -563,27 +580,17 @@ std::vector<at::Tensor> q_scale_per_weight_channel_dpcpp_backward(at::Tensor gra
           */
           sycl::local_accessor<scalar_accum_t, 1> sh_grad_low_acc_ct1(
               sycl::range<1>(1024 /*CUDA_MAX_NUM_THREADS_PER_BLOCK*/), cgh);
-
-          auto grad_input_data_ptr_scalar_t_ct0 =
-              grad_input.data_ptr<scalar_t>();
-          auto grad_input_low_data_ptr_scalar_t_ct1 =
-              grad_input_low.data_ptr<scalar_t>();
-          auto grad_input_range_data_ptr_scalar_t_ct2 =
-              grad_input_range.data_ptr<scalar_t>();
-          auto dev_tmp_range_data_ptr_scalar_accum_t_ct3 =
-              dev_tmp_range.data_ptr<scalar_accum_t>();
-          auto dev_tmp_low_data_ptr_scalar_accum_t_ct4 =
-              dev_tmp_low.data_ptr<scalar_accum_t>();
-          auto dev_last_block_counter_range_data_ptr_int32_t_ct5 =
-              dev_last_block_counter_range.data_ptr<int32_t>();
-          auto dev_last_block_counter_low_data_ptr_int32_t_ct6 =
-              dev_last_block_counter_low.data_ptr<int32_t>();
-          auto grad_output_data_ptr_scalar_t_ct7 =
-              grad_output.data_ptr<scalar_t>();
-          auto input_data_ptr_scalar_t_ct8 = input.data_ptr<scalar_t>();
-          auto input_low_data_ptr_scalar_t_ct9 = input_low.data_ptr<scalar_t>();
-          auto input_range_data_ptr_scalar_t_ct10 =
-              input_range.data_ptr<scalar_t>();
+          sycl::accessor grad_input_acc(grad_input_buf, cgh, sycl::write_only);
+          sycl::accessor grad_input_low_acc(grad_input_low_buf, cgh, sycl::write_only);
+          sycl::accessor grad_input_range_acc(grad_input_range_buf, cgh, sycl::write_only);
+          sycl::accessor dev_tmp_range_acc(dev_tmp_range_buf, cgh, sycl::write_only);
+          sycl::accessor dev_tmp_low_acc(dev_tmp_low_buf, cgh, sycl::write_only);
+          sycl::accessor dev_last_block_counter_range_acc(dev_last_block_counter_range_buf, cgh, sycl::write_only);
+          sycl::accessor dev_last_block_counter_low_acc(dev_last_block_counter_low_buf, cgh, sycl::write_only);
+          sycl::accessor grad_output_acc(grad_output_buf, cgh, sycl::read_only);
+          sycl::accessor input_acc(input_buf, cgh, sycl::read_only);
+          sycl::accessor input_low_acc(input_low_buf, cgh, sycl::read_only);
+          sycl::accessor input_range_acc(input_range_buf, cgh, sycl::read_only);
 
           cgh.parallel_for(
               sycl::nd_range<3>(
@@ -593,17 +600,17 @@ std::vector<at::Tensor> q_scale_per_weight_channel_dpcpp_backward(at::Tensor gra
               [=](sycl::nd_item<3> item_ct1) {
                 q_scale_per_weight_channel_dpcpp_backward_kernel<scalar_t,
                                                                 scalar_accum_t>(
-                    grad_input_data_ptr_scalar_t_ct0,
-                    grad_input_low_data_ptr_scalar_t_ct1,
-                    grad_input_range_data_ptr_scalar_t_ct2,
-                    dev_tmp_range_data_ptr_scalar_accum_t_ct3,
-                    dev_tmp_low_data_ptr_scalar_accum_t_ct4,
-                    dev_last_block_counter_range_data_ptr_int32_t_ct5,
-                    dev_last_block_counter_low_data_ptr_int32_t_ct6,
-                    grad_output_data_ptr_scalar_t_ct7,
-                    input_data_ptr_scalar_t_ct8,
-                    input_low_data_ptr_scalar_t_ct9,
-                    input_range_data_ptr_scalar_t_ct10, levels, level_low,
+                    grad_input_acc.get_pointer(),
+                    grad_input_low_acc.get_pointer(),
+                    grad_input_range_acc.get_pointer(),
+                    dev_tmp_range_acc.get_pointer(),
+                    dev_tmp_low_acc.get_pointer(),
+                    dev_last_block_counter_range_acc.get_pointer(),
+                    dev_last_block_counter_low_acc.get_pointer(),
+                    grad_output_acc.get_pointer(),
+                    input_acc.get_pointer(),
+                    input_low_acc.get_pointer(),
+                    input_range_acc.get_pointer(), levels, level_low,
                     level_high, elements_per_scale, item_ct1,
                     sh_grad_range_acc_ct1.get_pointer(),
                     sh_grad_low_acc_ct1.get_pointer());
@@ -660,6 +667,18 @@ std::vector<at::Tensor> q_scale_per_activation_channel_dpcpp_backward(at::Tensor
           info::device::max_work_group_size. Adjust the work-group size if
           needed.
           */
+    sycl::buffer grad_input_buf(grad_input.data_ptr<scalar_t>(), sycl::range<1>(grad_input.numel()));
+    sycl::buffer grad_input_low_buf(grad_input_low.data_ptr<scalar_t>(), sycl::range<1>(grad_input_low.numel()));
+    sycl::buffer grad_input_range_buf(grad_input_range.data_ptr<scalar_t>(), sycl::range<1>(grad_input_range.numel()));
+    sycl::buffer dev_tmp_range_buf(dev_tmp_range.data_ptr<scalar_accum_t>(), sycl::range<1>(dev_tmp_range.numel()));
+    sycl::buffer dev_tmp_low_buf(dev_tmp_low.data_ptr<scalar_accum_t>(), sycl::range<1>(dev_tmp_low.numel()));
+    sycl::buffer dev_last_block_counter_range_buf(dev_last_block_counter_range.data_ptr<int32_t>(), sycl::range<1>(dev_last_block_counter_range.numel()));
+    sycl::buffer dev_last_block_counter_low_buf(dev_last_block_counter_low.data_ptr<int32_t>(), sycl::range<1>(dev_last_block_counter_low.numel()));
+    sycl::buffer grad_output_buf(grad_output.data_ptr<scalar_t>(), sycl::range<1>(grad_output.numel()));
+    sycl::buffer input_buf(input.data_ptr<scalar_t>(), sycl::range<1>(input.numel()));
+    sycl::buffer input_low_buf(input_low.data_ptr<scalar_t>(), sycl::range<1>(input_low.numel()));
+    sycl::buffer input_range_buf(input_range.data_ptr<scalar_t>(), sycl::range<1>(input_range.numel()));
+
     dpct::get_default_queue().submit([&](sycl::handler &cgh) {
           /*
           DPCT1101:18: 'CUDA_MAX_NUM_THREADS_PER_BLOCK' expression was replaced
@@ -675,27 +694,17 @@ std::vector<at::Tensor> q_scale_per_activation_channel_dpcpp_backward(at::Tensor
           */
           sycl::local_accessor<scalar_accum_t, 1> sh_grad_low_acc_ct1(
               sycl::range<1>(1024 /*CUDA_MAX_NUM_THREADS_PER_BLOCK*/), cgh);
-
-          auto grad_input_data_ptr_scalar_t_ct0 =
-              grad_input.data_ptr<scalar_t>();
-          auto grad_input_low_data_ptr_scalar_t_ct1 =
-              grad_input_low.data_ptr<scalar_t>();
-          auto grad_input_range_data_ptr_scalar_t_ct2 =
-              grad_input_range.data_ptr<scalar_t>();
-          auto dev_tmp_range_data_ptr_scalar_accum_t_ct3 =
-              dev_tmp_range.data_ptr<scalar_accum_t>();
-          auto dev_tmp_low_data_ptr_scalar_accum_t_ct4 =
-              dev_tmp_low.data_ptr<scalar_accum_t>();
-          auto dev_last_block_counter_range_data_ptr_int32_t_ct5 =
-              dev_last_block_counter_range.data_ptr<int32_t>();
-          auto dev_last_block_counter_low_data_ptr_int32_t_ct6 =
-              dev_last_block_counter_low.data_ptr<int32_t>();
-          auto grad_output_data_ptr_scalar_t_ct7 =
-              grad_output.data_ptr<scalar_t>();
-          auto input_data_ptr_scalar_t_ct8 = input.data_ptr<scalar_t>();
-          auto input_low_data_ptr_scalar_t_ct9 = input_low.data_ptr<scalar_t>();
-          auto input_range_data_ptr_scalar_t_ct10 =
-              input_range.data_ptr<scalar_t>();
+          sycl::accessor grad_input_acc(grad_input_buf, cgh, sycl::write_only);
+          sycl::accessor grad_input_low_acc(grad_input_low_buf, cgh, sycl::write_only);
+          sycl::accessor grad_input_range_acc(grad_input_range_buf, cgh, sycl::write_only);
+          sycl::accessor dev_tmp_range_acc(dev_tmp_range_buf, cgh, sycl::write_only);
+          sycl::accessor dev_tmp_low_acc(dev_tmp_low_buf, cgh, sycl::write_only);
+          sycl::accessor dev_last_block_counter_range_acc(dev_last_block_counter_range_buf, cgh, sycl::write_only);
+          sycl::accessor dev_last_block_counter_low_acc(dev_last_block_counter_low_buf, cgh, sycl::write_only);
+          sycl::accessor grad_output_acc(grad_output_buf, cgh, sycl::read_only);
+          sycl::accessor input_acc(input_buf, cgh, sycl::read_only);
+          sycl::accessor input_low_acc(input_low_buf, cgh, sycl::read_only);
+          sycl::accessor input_range_acc(input_range_buf, cgh, sycl::read_only);
 
           cgh.parallel_for(
               sycl::nd_range<3>(
@@ -705,17 +714,17 @@ std::vector<at::Tensor> q_scale_per_activation_channel_dpcpp_backward(at::Tensor
               [=](sycl::nd_item<3> item_ct1) {
                 q_scale_per_activation_channel_dpcpp_backward_kernel<
                     scalar_t, scalar_accum_t>(
-                    grad_input_data_ptr_scalar_t_ct0,
-                    grad_input_low_data_ptr_scalar_t_ct1,
-                    grad_input_range_data_ptr_scalar_t_ct2,
-                    dev_tmp_range_data_ptr_scalar_accum_t_ct3,
-                    dev_tmp_low_data_ptr_scalar_accum_t_ct4,
-                    dev_last_block_counter_range_data_ptr_int32_t_ct5,
-                    dev_last_block_counter_low_data_ptr_int32_t_ct6,
-                    grad_output_data_ptr_scalar_t_ct7,
-                    input_data_ptr_scalar_t_ct8,
-                    input_low_data_ptr_scalar_t_ct9,
-                    input_range_data_ptr_scalar_t_ct10, levels, level_low,
+                    grad_input_acc.get_pointer(),
+                    grad_input_low_acc.get_pointer(),
+                    grad_input_range_acc.get_pointer(),
+                    dev_tmp_range_acc.get_pointer(),
+                    dev_tmp_low_acc.get_pointer(),
+                    dev_last_block_counter_range_acc.get_pointer(),
+                    dev_last_block_counter_low_acc.get_pointer(),
+                    grad_output_acc.get_pointer(),
+                    input_acc.get_pointer(),
+                    input_low_acc.get_pointer(),
+                    input_range_acc.get_pointer(), levels, level_low,
                     level_high, total_elements_per_scale,
                     contiguous_elements_per_scale, scale_count,
                     leading_channel_offset, item_ct1,
