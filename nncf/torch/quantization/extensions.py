@@ -40,6 +40,10 @@ CUDA_EXT_SRC_LIST = [
     os.path.join(BASE_EXT_DIR, "cuda/functions_cuda_impl.cu"),
 ]
 
+DPCPP_EXT_SRC_LIST = [
+    os.path.join(BASE_EXT_DIR, "dpcpp/functions_dpcpp.cpp"),
+    os.path.join(BASE_EXT_DIR, "dpcpp/functions_dpcpp_impl.dp.cpp"),
+]
 
 @EXTENSIONS.register()
 class QuantizedFunctionsCPULoader(ExtensionLoader):
@@ -105,6 +109,26 @@ class QuantizedFunctionsCUDALoader(ExtensionLoader):
     def name(cls) -> str:
         return "quantized_functions_cuda"
 
+@EXTENSIONS.register()
+class QuantizedFunctionsDPCPPLoader(ExtensionLoader):
+    @classmethod
+    def extension_type(cls):
+        return ExtensionsType.CPU
+
+    @classmethod
+    def name(cls) -> str:
+        return "quantized_functions_dpcpp"
+
+    @classmethod
+    def load(cls):
+        os.environ["CXX"] = "dpcpp"
+        return torch.utils.cpp_extension.load(
+            cls.name(),
+            DPCPP_EXT_SRC_LIST,
+            extra_include_paths=EXT_INCLUDE_DIRS,
+            build_directory=cls.get_build_dir(),
+            verbose=False,
+        )
 
 QuantizedFunctionsCPU = ExtensionNamespace(QuantizedFunctionsCPULoader())
 
@@ -112,3 +136,5 @@ if torch.cuda.is_available():
     QuantizedFunctionsCUDA = ExtensionNamespace(QuantizedFunctionsCUDALoader())
 else:
     QuantizedFunctionsCUDA = CudaNotAvailableStub()
+
+QuantizedFunctionsDPCPP = ExtensionNamespace(QuantizedFunctionsDPCPPLoader())
